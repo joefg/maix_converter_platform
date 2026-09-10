@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+THISDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+THISFILE="$(basename "$0")"
+PROJNAME="$(basename "$THISDIR")"
+
+function help(){
+cat << EOF
+help                            : Display help text
+restore                         : Fetch dependencies
+lint                            : Lint codebase
+dev                             : Spawn a development environment
+EOF
+}
+
+
+function if_installed() {
+    local -r cmd="$1"
+    if command -v "$cmd" >/dev/null 2>&1
+        then return 0
+        else return 1
+    fi
+}
+
+function run_restore(){
+    uv sync
+}
+
+function run_lint(){
+    local -r shellcheck_available=$(if_installed shellcheck)
+    if [[ $shellcheck_available -eq 0 ]]; then
+        shellcheck "$THISFILE"
+    else
+        echo "Unable to lint runfile; shellcheck unavailable."
+    fi
+}
+
+function run_dev(){
+    uv run uvicorn web.app:app
+}
+
+
+function main(){
+    echo "======= [$PROJNAME] ======="
+    cmd=${1-default}
+    shift || true
+    case "$cmd" in
+        help|default)
+            help "$@"
+            ;;
+        restore)
+            run_restore
+            ;;
+        clean)
+            run_clean
+            ;;
+        build)
+            run_build
+            ;;
+        lint)
+            run_lint
+            ;;
+        test)
+            run_test "$@" 
+            ;;
+        dev)
+            run_dev
+            ;;
+        *)
+            echo "no-op $cmd"
+            ;;
+    esac
+}
+
+main "$@"
