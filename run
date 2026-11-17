@@ -25,6 +25,7 @@ function if_installed() {
 
 function run_restore(){
     uv sync
+    $THISDIR/scripts/setup_toolchains.sh all
 }
 
 function run_lint(){
